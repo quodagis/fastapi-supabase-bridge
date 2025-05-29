@@ -12,6 +12,10 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI()
 
+@app.get("/health")
+def health_check():
+    return JSONResponse(content={"status": "ok"})
+
 @app.get("/h4_tpds")
 def get_h4_tpds():
     try:
