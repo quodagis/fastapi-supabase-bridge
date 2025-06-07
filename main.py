@@ -6,6 +6,8 @@ from pydantic import BaseModel
 import asyncpg
 import os
 import datetime
+from typing import Literal
+
 
 load_dotenv()
 
