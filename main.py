@@ -37,9 +37,8 @@ def get_h4_tpds():
 
 
 class OHLCQuery(BaseModel):
-
-    symbol: Literal["ES", "NQ", "YM"]
-    timeframe: Literal["Weekly", "Daily", "H4", "H1"]
+    symbol: str
+    timeframe: str
     start_time: datetime.datetime
     end_time: datetime.datetime
 
