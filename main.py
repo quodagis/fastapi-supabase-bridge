@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from pydantic import BaseModel
-import asyncpg
 import os
 import datetime
 from typing import Literal
@@ -43,34 +42,19 @@ class OHLCQuery(BaseModel):
     end_time: datetime.datetime
 
 @app.post("/query_ohlc")
-async def query_ohlc(payload: OHLCQuery):
+def query_ohlc(payload: OHLCQuery):
     try:
-        conn = await asyncpg.connect(
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            host=os.getenv("DB_HOST"),
-            port=5432,
-            ssl='require'
+        response = (
+            supabase.table("ohlc_data")
+            .select("*")
+            .eq("symbol", payload.symbol)
+            .eq("timeframe", payload.timeframe)
+            .gte("timestamp", payload.start_time.isoformat())
+            .lte("timestamp", payload.end_time.isoformat())
+            .order("timestamp", desc=False)
+            .execute()
         )
-
-        rows = await conn.fetch(
-            """
-            SELECT symbol, timeframe, timestamp, open, high, low, close
-            FROM ohlc_data
-            WHERE symbol = $1
-              AND timeframe = $2
-              AND timestamp >= $3
-              AND timestamp <= $4
-            ORDER BY timestamp ASC
-            """,
-            payload.symbol, payload.timeframe,
-            payload.start_time, payload.end_time
-        )
-
-        await conn.close()
-
-        return {"data": [dict(row) for row in rows]}
-
+        return {"data": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
