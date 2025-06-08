@@ -49,9 +49,9 @@ def query_ohlc(payload: OHLCQuery):
             .select("*")
             .eq("symbol", payload.symbol)
             .eq("timeframe", payload.timeframe)
-            .gte("timestamp", payload.start_time.isoformat())
-            .lte("timestamp", payload.end_time.isoformat())
-            .order("timestamp", desc=False)
+            .gte("time", payload.start_time.isoformat())
+            .lte("time", payload.end_time.isoformat())
+            .order("time", desc=False)
             .execute()
         )
         return {"data": response.data}
