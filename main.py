@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi import Body
 from fastapi.responses import JSONResponse
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ from pydantic import BaseModel
 import os
 import datetime
 from typing import Literal
+from typing import List
 
 
 load_dotenv()
@@ -57,4 +59,19 @@ def query_ohlc(payload: OHLCQuery):
         return {"data": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/insert_tpds")
+def insert_tpds(records: List[dict] = Body(...)):
+    try:
+        supabase.table("tpd_data").insert(records).execute()
+        return {"status": "success", "inserted": len(records)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tpd_exists")
+def tpd_exists(tpd_time: str):
+    result = supabase.table("tpd_data").select("id").eq("tpd_time", tpd_time).execute()
+    return {"exists": len(result.data) > 0}
 
