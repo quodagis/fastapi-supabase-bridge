@@ -49,6 +49,8 @@ def query_ohlc(payload: OHLCQuery):
         offset = payload.offset or 0
         end_index = offset + limit - 1  # Supabase .range is inclusive
 
+        print(f"Querying: symbol={payload.symbol}, timeframe={payload.timeframe}, time={payload.start_time}–{payload.end_time}, range={offset}–{end_index}")
+
         response = (
             supabase.table("ohlc_data")
             .select("*")
@@ -61,6 +63,7 @@ def query_ohlc(payload: OHLCQuery):
             .execute()
         )
         return {"data": response.data}
+        print(f"Response: {response}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
