@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from pydantic import BaseModel
+import asyncpg
 import os
 import datetime
 from typing import Literal
@@ -38,25 +39,48 @@ def get_h4_tpds():
 
 
 class OHLCQuery(BaseModel):
-    symbol: str
-    timeframe: str
+    symbol: Literal["ESM2025", "NQM2025", "YMM2025"]
+    timeframe: Literal["60", "240", "360", "1D", "1W"]
     start_time: datetime.datetime
     end_time: datetime.datetime
+    limit: Optional[int] = 5000
+    offset: Optional[int] = 0
 
 @app.post("/query_ohlc")
-def query_ohlc(payload: OHLCQuery):
+async def query_ohlc(payload: OHLCQuery):
     try:
-        response = (
-            supabase.table("ohlc_data")
-            .select("*")
-            .eq("symbol", payload.symbol)
-            .eq("timeframe", payload.timeframe)
-            .gte("time", payload.start_time.isoformat())
-            .lte("time", payload.end_time.isoformat())
-            .order("time", desc=False)
-            .execute()
+        conn = await asyncpg.connect(
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            host=os.getenv("DB_HOST"),
+            port=5432,
+            ssl='require'
         )
-        return {"data": response.data}
+
+        rows = await conn.fetch(
+            """
+            SELECT symbol, timeframe, time AS timestamp, open, high, low, close
+            FROM ohlc_data
+            WHERE symbol = $1
+              AND timeframe = $2
+              AND time >= $3
+              AND time <= $4
+            ORDER BY time ASC
+            LIMIT $5 OFFSET $6
+            """,
+            payload.symbol,
+            payload.timeframe,
+            payload.start_time,
+            payload.end_time,
+            payload.limit,
+            payload.offset
+        )
+
+        await conn.close()
+
+        return {"data": [dict(row) for row in rows]}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
