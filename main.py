@@ -52,8 +52,8 @@ def query_ohlc(payload: OHLCQuery):
         response = (
             supabase.table("ohlc_data")
             .select("*")
-            .eq("symbol", payload.symbol)
-            .eq("timeframe", payload.timeframe)
+            .eq("symbol", str(payload.symbol))
+            .eq("timeframe", str(payload.timeframe))
             .gte("time", payload.start_time.isoformat())
             .lte("time", payload.end_time.isoformat())
             .order("time", desc=False)
