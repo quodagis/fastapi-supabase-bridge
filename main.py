@@ -71,7 +71,16 @@ def insert_tpds(records: List[dict] = Body(...)):
 
 
 @app.get("/tpd_exists")
-def tpd_exists(tpd_time: str):
-    result = supabase.table("tpd_data").select("id").eq("tpd_time", tpd_time).execute()
-    return {"exists": len(result.data) > 0}
+def tpd_exists(tpd_time: str, timeframe: str):
+    try:
+        result = supabase.table("tpd_data") \
+            .select("tpd_time", "timeframe") \
+            .eq("tpd_time", tpd_time) \
+            .eq("timeframe", timeframe) \
+            .execute()
+
+        return {"exists": len(result.data) > 0}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
